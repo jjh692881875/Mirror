@@ -385,7 +385,6 @@ namespace Mirror.Weaver
 
         static MethodDefinition GenerateListWriteFunc(TypeReference variable, int recursionCount)
         {
-            // TODO update this method for List (copied from ArraySegment atm)
             GenericInstanceType genericInstance = (GenericInstanceType)variable;
             TypeReference elementType = genericInstance.GenericArguments[0];
             MethodReference elementWriteFunc = GetWriteFunc(elementType, recursionCount + 1);
@@ -395,7 +394,7 @@ namespace Mirror.Weaver
                 return null;
             }
 
-            string functionName = "_WriteArraySegment_" + elementType.Name + "_";
+            string functionName = "_WriteList_" + elementType.Name + "_";
             if (variable.DeclaringType != null)
             {
                 functionName += variable.DeclaringType.Name;
@@ -410,18 +409,18 @@ namespace Mirror.Weaver
                     MethodAttributes.Public |
                     MethodAttributes.Static |
                     MethodAttributes.HideBySig,
-                    Weaver.voidType);
+                    WeaverTypes.voidType);
 
-            writerFunc.Parameters.Add(new ParameterDefinition("writer", ParameterAttributes.None, Weaver.CurrentAssembly.MainModule.ImportReference(Weaver.NetworkWriterType)));
+            writerFunc.Parameters.Add(new ParameterDefinition("writer", ParameterAttributes.None, Weaver.CurrentAssembly.MainModule.ImportReference(WeaverTypes.NetworkWriterType)));
             writerFunc.Parameters.Add(new ParameterDefinition("value", ParameterAttributes.None, variable));
 
-            writerFunc.Body.Variables.Add(new VariableDefinition(Weaver.int32Type));
-            writerFunc.Body.Variables.Add(new VariableDefinition(Weaver.int32Type));
+            writerFunc.Body.Variables.Add(new VariableDefinition(WeaverTypes.int32Type));
+            writerFunc.Body.Variables.Add(new VariableDefinition(WeaverTypes.int32Type));
             writerFunc.Body.InitLocals = true;
 
             ILProcessor worker = writerFunc.Body.GetILProcessor();
 
-            MethodReference countref = Weaver.ArraySegmentCountReference.MakeHostInstanceGeneric(genericInstance);
+            MethodReference countref = WeaverTypes.ListCountReference.MakeHostInstanceGeneric(genericInstance);
 
             // int length = value.Count;
             worker.Append(worker.Create(OpCodes.Ldarga_S, (byte)1));
@@ -432,8 +431,9 @@ namespace Mirror.Weaver
             // writer.WritePackedInt32(length);
             worker.Append(worker.Create(OpCodes.Ldarg_0));
             worker.Append(worker.Create(OpCodes.Ldloc_0));
-            worker.Append(worker.Create(OpCodes.Call, GetWriteFunc(Weaver.int32Type)));
+            worker.Append(worker.Create(OpCodes.Call, GetWriteFunc(WeaverTypes.int32Type)));
 
+            // TODO update this method for List (copied from ArraySegment atm)
             // Loop through the ArraySegment<T> and call the writer for each element.
             // generates this:
             // for (int i=0; i< length; i++)
@@ -452,10 +452,10 @@ namespace Mirror.Weaver
             // writer.Write(value.Array[i + value.Offset]);
             worker.Append(worker.Create(OpCodes.Ldarg_0));
             worker.Append(worker.Create(OpCodes.Ldarga_S, (byte)1));
-            worker.Append(worker.Create(OpCodes.Call, Weaver.ArraySegmentArrayReference.MakeHostInstanceGeneric(genericInstance)));
+            worker.Append(worker.Create(OpCodes.Call, WeaverTypes.ArraySegmentArrayReference.MakeHostInstanceGeneric(genericInstance)));
             worker.Append(worker.Create(OpCodes.Ldloc_1));
             worker.Append(worker.Create(OpCodes.Ldarga_S, (byte)1));
-            worker.Append(worker.Create(OpCodes.Call, Weaver.ArraySegmentOffsetReference.MakeHostInstanceGeneric(genericInstance)));
+            worker.Append(worker.Create(OpCodes.Call, WeaverTypes.ArraySegmentOffsetReference.MakeHostInstanceGeneric(genericInstance)));
             worker.Append(worker.Create(OpCodes.Add));
             worker.Append(worker.Create(OpCodes.Ldelema, elementType));
             worker.Append(worker.Create(OpCodes.Ldobj, elementType));
