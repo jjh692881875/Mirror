@@ -164,7 +164,7 @@ namespace Mirror.Weaver
             ArraySegmentOffsetReference = Resolvers.ResolveProperty(ArraySegmentType, currentAssembly, "Offset");
             ArraySegmentConstructorReference = Resolvers.ResolveMethod(ArraySegmentType, currentAssembly, ".ctor");
 
-            ListType = ImportSystemModuleType(currentAssembly, systemModule, "System.List`1");
+            ListType = ImportSystemModuleType(currentAssembly, systemModule, "System.Collections.Generic.List`1");
             ListCountReference = Resolvers.ResolveProperty(ListType, currentAssembly, "Count");
             ListConstructorReference = Resolvers.ResolveMethod(ListType, currentAssembly, ".ctor");
 
